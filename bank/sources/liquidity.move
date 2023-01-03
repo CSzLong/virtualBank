@@ -79,23 +79,23 @@ module bank::liquidity {
     }
 
     public(friend) fun withdraw<X, Y>(pool: &mut Pool<X, Y>,
-                                      lp: Coin<LP<X, Y>>,
+                                      lp: &mut Coin<LP<X, Y>>,
                                       vec: &mut vector<u64>,
                                       coin_x_out: u64,
                                       coin_y_out: u64,
-                                      ctx: &mut TxContext): (Coin<X>, Coin<Y>, Coin<LP<X, Y>>) {
+                                      ctx: &mut TxContext): (Coin<X>, Coin<Y>) {
         assert!(balance::value(&mut pool.coin_x) > coin_x_out, ErrNotEnoughXInPool);
         assert!(balance::value(&mut pool.coin_y) > coin_y_out, ErrNotEnoughYInPool);
-        assert!(coin::value(&lp) >= coin_x_out + coin_y_out, ErrNotEnoughBalanceLP);
+        assert!(coin::value(lp) >= coin_x_out + coin_y_out, ErrNotEnoughBalanceLP);
         let coin_x_balance = vector::borrow_mut(vec, 0);
         *coin_x_balance = *coin_x_balance - coin_x_out;
         let coin_y_balance = vector::borrow_mut(vec, 1);
         *coin_y_balance = *coin_y_balance - coin_y_out;
         let coin_x = coin::take(&mut pool.coin_x, coin_x_out, ctx);
         let coin_y = coin::take(&mut pool.coin_y, coin_y_out, ctx);
-        let lp_split = coin::split(&mut lp, coin_x_out + coin_y_out, ctx);
+        let lp_split = coin::split(lp, coin_x_out + coin_y_out, ctx);
         balance::decrease_supply(&mut pool.lp_supply, coin::into_balance(lp_split));
-        (coin_x, coin_y, lp)
+        (coin_x, coin_y)
     }
 
     //swap Coin X to Y, return Coin Y
