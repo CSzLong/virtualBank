@@ -9,14 +9,21 @@ module bank::liquidity {
 
     use std::vector;
 
-
+    //When Coin is zero
     const ErrZeroAmount: u64 = 1001;
+    //Insufficient Coin X in pool
     const ErrNotEnoughXInPool: u64 = 1002;
+    //Insufficient Coin Y in pool
     const ErrNotEnoughYInPool: u64 = 1003;
+    //When vector length is not 2
     const ErrInvalidVecotrType: u64 = 1004;
+    //When balance in LP doesn't match summary in vector
     const ErrBalanceNotMatch: u64 = 1005;
+    //When balance in LP is not sufficient to withdraw
     const ErrNotEnoughBalanceLP: u64 = 1006;
+    //When withdraw failed
     const ErrRemoveFailed: u64 = 1011;
+    //When Liquidity provider vector is empty
     const ErrEmptyLPVector: u64 = 1012;
 
     //Liquidity provider, parameter 'X' and 'Y'
@@ -108,9 +115,9 @@ module bank::liquidity {
     }
 
     //swap Coin X to Y, return Coin Y
-    public fun swap_x_out_y<X, Y>(pool: &mut Pool<X, Y>,
-                                  paid_in: Coin<X>,
-                                  ctx: &mut TxContext): Coin<Y> {
+    public entry fun swap_x_outto_y<X, Y>(pool: &mut Pool<X, Y>,
+                                          paid_in: Coin<X>,
+                                          ctx: &mut TxContext): Coin<Y> {
         let paid_value = coin::value(&paid_in);
         coin::put(&mut pool.coin_x, paid_in);
         assert!(paid_value < balance::value(&mut pool.coin_y), ErrNotEnoughYInPool);
@@ -171,8 +178,9 @@ module bank::liquidity {
         let lp_id = object::id(&lp);
         table::add(&mut pocket.table, lp_id, vec);
         transfer::transfer(lp, sender(ctx));
-        transfer::transfer(coin_x_new, sender(ctx));
-        transfer::transfer(coin_y_new, sender(ctx));
+        let sender_address = sender(ctx);
+        transfer::transfer(coin_x_new, sender_address);
+        transfer::transfer(coin_y_new, sender_address);
     }
 
     //entry function Withdraw all balance in Liquidity provider from pool
@@ -187,8 +195,9 @@ module bank::liquidity {
         let vec_out = table::remove(&mut pocket.table, lp_id);
         vector::remove(&mut vec_out, 0);
         vector::remove(&mut vec_out, 0);
-        transfer::transfer(coin_x_out, sender(ctx));
-        transfer::transfer(coin_y_out, sender(ctx));
+        let sender_address = sender(ctx);
+        transfer::transfer(coin_x_out, sender_address);
+        transfer::transfer(coin_y_out, sender_address);
     }
 
     //combine multiple liquidity providers
@@ -227,8 +236,36 @@ module bank::liquidity {
             withdraw(pool, &mut combined_lp, &mut combined_vec, coin_x_amt, coin_y_amt, ctx);
         let combined_lp_id = object::id(&combined_lp);
         table::add(&mut pocket.table, combined_lp_id, combined_vec);
-        transfer::transfer(withdraw_coin_x, sender(ctx));
-        transfer::transfer(withdraw_coin_y, sender(ctx));
-        transfer::transfer(combined_lp, sender(ctx));
+        let sender_address = sender(ctx);
+        transfer::transfer(withdraw_coin_x, sender_address);
+        transfer::transfer(withdraw_coin_y, sender_address);
+        transfer::transfer(combined_lp, sender_address);
+    }
+
+    public entry fun swap_x_to_y<X, Y>(pool: &mut Pool<X, Y>,
+                                       coin_x_vec: vector<Coin<X>>,
+                                       amount: u64,
+                                       ctx: &mut TxContext) {
+        let coin_x = coin::zero<X>(ctx);
+        pay::join_vec<X>(&mut coin_x, coin_x_vec);
+        let coin_x_in = coin::split(&mut coin_x, amount, ctx);
+        let coin_y_out = swap_x_outto_y(pool, coin_x_in, ctx);
+        let sender_addres = sender(ctx);
+        transfer::transfer(coin_x, sender_addres);
+        transfer::transfer(coin_y_out, sender_addres);
+    }
+
+
+    public entry fun swap_y_to_x<X, Y>(pool: &mut Pool<X, Y>,
+                                       coin_y_vec: vector<Coin<Y>>,
+                                       amount: u64,
+                                       ctx: &mut TxContext) {
+        let coin_y = coin::zero<Y>(ctx);
+        pay::join_vec<Y>(&mut coin_y, coin_y_vec);
+        let coin_y_in = coin::split(&mut coin_y, amount, ctx);
+        let coin_x_out = swap_y_into_x(pool, coin_y_in, ctx);
+        let sender_addres = sender(ctx);
+        transfer::transfer(coin_x_out, sender_addres);
+        transfer::transfer(coin_y, sender_addres);
     }
 }
