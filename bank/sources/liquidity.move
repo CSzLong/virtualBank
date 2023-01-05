@@ -9,28 +9,28 @@ module bank::liquidity {
 
     use std::vector;
 
-    //When Coin is zero
+    ///When Coin is zero
     const ErrZeroAmount: u64 = 1001;
-    //Insufficient Coin X in pool
+    ///Insufficient Coin X in pool
     const ErrNotEnoughXInPool: u64 = 1002;
-    //Insufficient Coin Y in pool
+    ///Insufficient Coin Y in pool
     const ErrNotEnoughYInPool: u64 = 1003;
-    //When vector length is not 2
+    ///When vector length is not 2
     const ErrInvalidVecotrType: u64 = 1004;
-    //When balance in LP doesn't match summary in vector
+    ///When balance in LP doesn't match summary in vector
     const ErrBalanceNotMatch: u64 = 1005;
-    //When balance in LP is not sufficient to withdraw
+    ///When balance in LP is not sufficient to withdraw
     const ErrNotEnoughBalanceLP: u64 = 1006;
-    //When withdraw failed
+    ///When withdraw failed
     const ErrRemoveFailed: u64 = 1011;
-    //When Liquidity provider vector is empty
+    ///When Liquidity provider vector is empty
     const ErrEmptyLPVector: u64 = 1012;
 
-    //Liquidity provider, parameter 'X' and 'Y'
-    //are coins held in the pool.
+    ///Liquidity provider, parameter 'X' and 'Y'
+    ///are coins held in the pool.
     struct LP<phantom X, phantom Y> has drop {}
 
-    // Pool with exchange
+    /// Pool with exchange
     struct Pool<phantom X, phantom Y> has key {
         id: UID,
         coin_x: Balance<X>,
@@ -38,14 +38,14 @@ module bank::liquidity {
         lp_supply: Supply<LP<X, Y>>
     }
 
-    //pocket to keep the Liquidity provider
-    //and balance of Coin X/Y
+    ///pocket to keep the Liquidity provider
+    ///and balance of Coin X/Y
     struct Pocket has key {
         id: UID,
         table: Table<ID, vector<u64>>
     }
 
-    //create a new pool
+    ///create a new pool
     public fun new_pool<X, Y>(ctx: &mut TxContext) {
         let new_pool = Pool<X, Y> {
             id: object::new(ctx),
@@ -56,7 +56,7 @@ module bank::liquidity {
         transfer::share_object(new_pool);
     }
 
-    //Add liquidity into pool, exchange rate is 1 between X and Y
+    ///Add liquidity into pool, exchange rate is 1 between X and Y
     public fun add_liquidity<X, Y>(pool: &mut Pool<X, Y>,
                                    coin_x: Coin<X>,
                                    coin_y: Coin<Y>,
@@ -73,7 +73,7 @@ module bank::liquidity {
         (coin::from_balance(lp_bal, ctx), vec_value)
     }
 
-    //Remove the liquidity and balance from pool
+    ///Remove the liquidity and balance from pool
     public fun remove_liquidity<X, Y>(pool: &mut Pool<X, Y>,
                                       lp: Coin<LP<X, Y>>,
                                       vec: vector<u64>,
@@ -92,7 +92,7 @@ module bank::liquidity {
         )
     }
 
-    //withdraw coin from balance
+    ///withdraw coin from balance
     public fun withdraw<X, Y>(pool: &mut Pool<X, Y>,
                               lp: &mut Coin<LP<X, Y>>,
                               vec: &mut vector<u64>,
@@ -114,8 +114,8 @@ module bank::liquidity {
         )
     }
 
-    //swap Coin X to Y, return Coin Y
-    public entry fun swap_x_outto_y<X, Y>(pool: &mut Pool<X, Y>,
+    ///swap Coin X to Y, return Coin Y
+    public fun swap_x_outto_y<X, Y>(pool: &mut Pool<X, Y>,
                                           paid_in: Coin<X>,
                                           ctx: &mut TxContext): Coin<Y> {
         let paid_value = coin::value(&paid_in);
@@ -124,7 +124,7 @@ module bank::liquidity {
         coin::take(&mut pool.coin_y, paid_value, ctx)
     }
 
-    //swap Coin Y to X, return Coin X
+    ///swap Coin Y to X, return Coin X
     public fun swap_y_into_x<X, Y>(pool: &mut Pool<X, Y>,
                                    paid_in: Coin<Y>,
                                    ctx: &mut TxContext): Coin<X> {
@@ -134,7 +134,7 @@ module bank::liquidity {
         coin::take(&mut pool.coin_x, paid_value, ctx)
     }
 
-    //entry function to create new pocket
+    ///entry function to create new pocket
     public entry fun create_pocket(ctx: &mut TxContext) {
         let pocket = Pocket {
             id: object::new(ctx),
@@ -143,12 +143,12 @@ module bank::liquidity {
         transfer::transfer(pocket, sender(ctx));
     }
 
-    //entry function to generate new pool
+    ///entry function to generate new pool
     public entry fun generate_pool<X, Y>(ctx: &mut TxContext) {
         new_pool<X, Y>(ctx);
     }
 
-    //entry function to deposit total Coin X and Y to pool
+    ///entry function to deposit total Coin X and Y to pool
     public entry fun deposit_totally<X, Y>(pool: &mut Pool<X, Y>,
                                            coin_x: Coin<X>,
                                            coin_y: Coin<Y>,
@@ -160,7 +160,7 @@ module bank::liquidity {
         transfer::transfer(lp, sender(ctx));
     }
 
-    //entry function to deposit part of Coin X and Y to pool
+    ///entry function to deposit part of Coin X and Y to pool
     public entry fun deposit_partly<X, Y>(pool: &mut Pool<X, Y>,
                                           coin_x_vec: vector<Coin<X>>,
                                           coin_y_vec: vector<Coin<Y>>,
@@ -183,7 +183,7 @@ module bank::liquidity {
         transfer::transfer(coin_y_new, sender_address);
     }
 
-    //entry function Withdraw all balance in Liquidity provider from pool
+    ///entry function Withdraw all balance in Liquidity provider from pool
     public entry fun remove_liquidity_totally<X, Y>(pool: &mut Pool<X, Y>,
                                                     lp: Coin<LP<X, Y>>,
                                                     pocket: &mut Pocket,
@@ -200,7 +200,7 @@ module bank::liquidity {
         transfer::transfer(coin_y_out, sender_address);
     }
 
-    //combine multiple liquidity providers
+    ///combine multiple liquidity providers
     public fun join_lp_vec<X, Y>(lp_vec: vector<Coin<LP<X, Y>>>,
                                  pocket: &mut Pocket,
                                  ctx: &mut TxContext): (Coin<LP<X, Y>>, vector<u64>) {
@@ -217,6 +217,7 @@ module bank::liquidity {
             combined_x_amt = combined_x_amt + vector::pop_back(&mut vec_out);
             vector::destroy_empty(vec_out);
             pay::join(&mut combined_lp, lp_out);
+            idx = idx + 1;
         };
         vector::destroy_empty(lp_vec);
         vector::push_back(&mut combined_vec, combined_x_amt);
@@ -224,7 +225,7 @@ module bank::liquidity {
         (combined_lp, combined_vec)
     }
 
-    //Withdraw part of balance in liquidity provider from pool
+    ///Withdraw part of balance in liquidity provider from pool
     public entry fun withdraw_out<X, Y>(pool: &mut Pool<X, Y>,
                                         lp_vec: vector<Coin<LP<X, Y>>>,
                                         coin_x_amt: u64,
@@ -254,7 +255,6 @@ module bank::liquidity {
         transfer::transfer(coin_x, sender_addres);
         transfer::transfer(coin_y_out, sender_addres);
     }
-
 
     public entry fun swap_y_to_x<X, Y>(pool: &mut Pool<X, Y>,
                                        coin_y_vec: vector<Coin<Y>>,
