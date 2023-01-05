@@ -2,6 +2,24 @@
 
 Simple sui swap
 
+## Code Structure
+
+    .
+    ├── bank
+    ├     └── liquidity
+    ├            ├── generate_pool
+    ├            ├── deposit_totally
+    ├            ├── deposit_partly
+    ├            ├── remove_liquidity_totally
+    ├            ├── withdraw_out
+    ├            ├── swap_x_to_y
+    ├            └── swap_y_to_x 
+    └── testcoin
+           ├── cnya
+           ├     └── mint_coin
+           └── cnyw
+                 └── mint_coin
+
 ## Command for testing
 
 ```bash
@@ -14,7 +32,7 @@ CNYWCAP="0x89e86789a63c28a84f5c03fecc0003386cc66f82"
 
 # mint CNYA
 # sui 0.20.0 defect, need pass value as string to u64 in format of \"1\"
-# waiting to Mysten to resolve
+# waiting to MystenLab to resolve
 $ sui client call --package $COINPKG \
                 --module cnya \
                 --function mint_coin \
