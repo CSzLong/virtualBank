@@ -25,7 +25,7 @@ $ sui client call --package $COINPKG \
                 --module cnyw \
                 --function mint_coin \
                 --gas-budget 10000 \
-                --args CNYWCAP \"10000\"
+                --args $CNYWCAP \"10000\"
 
 # bank package
 $ BANKPKG="0xc0867a5bd54ca0b9fbbb8d262c163f55ef6dcd4d"
